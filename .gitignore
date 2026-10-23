@@ -1,0 +1,83 @@
+#
+# ---- 环境与密钥（绝不能提交 / 绝不能进 release 包）----
+#
+.env
+.env.*
+!.env.example
+storage/oauth-public.key
+storage/oauth-private.key
+storage/install.lock
+
+#
+# ---- 依赖与构建产物 ----
+#
+vendor/*
+node_modules/*
+public/app
+public/lang/*.js
+public/plugins/*
+!public/plugins/.gitignore
+yarn-error.log
+coverage
+target/
+.sass-cache
+.cache/
+.cache-loader/
+
+#
+# ---- 运行时缓存 / 日志：仓库只保留空骨架，release 包同样只保留空骨架 ----
+#
+/bootstrap/cache/*.php
+storage/logs/*
+!storage/logs/.gitignore
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/testing
+storage/debugbar/*
+storage/packages/*
+storage/textures/*
+storage/app/*
+!storage/app/.gitignore
+!storage/app/public/
+!storage/app/public/.gitignore
+storage/update_cache/*
+storage/options.php
+storage/insane-profile-cache
+storage/*.db
+storage/*.sqlite
+
+#
+# ---- 插件（运行时由用户自行安装，不进仓库也不进 release 包）----
+#
+plugins/*
+!plugins/.gitignore
+
+#
+# ---- 用户覆盖文件 ----
+#
+resources/views/overrides
+resources/lang/overrides
+
+#
+# ---- release 产物与旧安装包（只留在本地，不推送）----
+#
+dist/
+*.zip
+blessing-skin-server-*/
+tools/composer.phar
+
+#
+# ---- 本地工具 / IDE ----
+#
+.workbuddy/
+.idea/
+.vscode/
+_ide_helper.php
+.phpstorm.meta.php
+.uini
+junit.xml
+.phpunit.result.cache
+.php-cs-fixer.cache
+.DS_Store
+*/.DS_Store
