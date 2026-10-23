@@ -1,7 +1,6 @@
 # 发版指南（Release）
 
 本仓库是 [Blessing Skin Server](https://github.com/bs-community/blessing-skin-server) `6.0.2` 的定制发行版，
-运行环境为 **宝塔面板 + Nginx + PHP 8.4 + MySQL 8**（Laravel 13）。
 
 本文档说明如何发布一个正式版本（含 GitHub Actions 自动发版、本地打包、产物校验与回滚）。
 
