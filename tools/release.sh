@@ -10,7 +10,11 @@
 #   3. bootstrap/cache/ 只保留 .gitignore，不携带 packages.php / services.php
 #      等生成物（Laravel 会按需重建）；
 #   4. 不携带前端源码（resources/assets）、sourcemap、plugins 实装内容、
-#      composer.json/lock、node_modules、dist、旧安装包等开发/运行时产物。
+#      composer.lock、node_modules、dist、旧安装包等开发/运行时产物。
+#
+# 前置条件：前端资源已构建（public/app 存在且含 favicon.ico）。
+#   首次构建请先执行：yarn install && bash tools/build-assets.sh
+#   CI 中由 .github/workflows/release.yml 自动完成。
 #
 # 用法：
 #   bash tools/release.sh              # 默认顺便用 composer --no-dev 精简 vendor
@@ -27,7 +31,7 @@ WITH_COMPOSER=1
 for arg in "$@"; do
     case "$arg" in
         --no-composer) WITH_COMPOSER=0 ;;
-        -h|--help) sed -n '2,26p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,/^set -euo/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' | sed '$d'; exit 0 ;;
         *) echo "未知参数：$arg" >&2; exit 1 ;;
     esac
 done
@@ -116,8 +120,22 @@ echo "==> 清理开发内容"
 /bin/rm -f  "$PKG/.env"                             # 绝对不允许进包
 find "$PKG" -type f -name '*.map' -delete           # sourcemap
 
+# public/lang/*.js 是运行时按需生成的翻译缓存（Resources/Translations/JavaScript.php），
+# 站点首次访问会自动重建，不应进包；但目录本身要保留（web 用户需可写）
+if [ -d "$PKG/public/lang" ]; then
+    find "$PKG/public/lang" -type f ! -name '.gitignore' -delete
+else
+    mkdir -p "$PKG/public/lang"
+fi
+[ -f "$PKG/public/lang/.gitignore" ] || printf '*\n!.gitignore\n' > "$PKG/public/lang/.gitignore"
+
 if [ ! -d "$PKG/public/app" ] || [ -z "$(find "$PKG/public/app" -type f -print -quit)" ]; then
-    echo "    [警告] public/app 为空：前端资源尚未构建，请先执行 yarn install && yarn build"
+    echo "[错误] public/app 为空：前端资源未构建，请先执行 bash tools/build-assets.sh" >&2
+    exit 1
+fi
+if [ ! -f "$PKG/public/app/favicon.ico" ]; then
+    echo "[错误] public/app/favicon.ico 缺失：请执行 bash tools/build-assets.sh（它会补拷静态文件）" >&2
+    exit 1
 fi
 
 # PLUGINS 与 public/plugins 清空（插件由用户在站点后台自行安装）

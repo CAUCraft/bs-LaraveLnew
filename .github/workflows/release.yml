@@ -1,0 +1,126 @@
+name: Release
+
+# 触发方式
+#   1) 推送 tag（推荐）：git push origin HEAD --follow-tags
+#      tag 形如 v6.0.2-R1 —— 会自动构建安装包并创建 GitHub Release
+#   2) 手动触发（Actions 页面 Run workflow）—— 只构建安装包并上传为 workflow artifact，不发 Release
+#
+# 构建流程与 tools/release.sh 完全一致：
+#   composer install --no-dev → yarn build → copies 静态文件 → 白名单打包 → 安全检查
+#
+# 详细发版说明见仓库根目录 RELEASE.md
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: 构建并发布安装包
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 读取版本号并校验 tag
+        id: ver
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(sed -nE "s/.*'version'[[:space:]]*=>[[:space:]]*'([^']+)'.*/\1/p" config/app.php | head -1)
+          if [ -z "$VERSION" ]; then
+            echo "::error::无法从 config/app.php 读取版本号"
+            exit 1
+          fi
+          echo "版本号：$VERSION"
+
+          # tag 推送时，tag 必须与源码里的版本号一致（v6.0.2-R1 <-> 6.0.2-R1）
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+            if [ "$TAG_VERSION" != "$VERSION" ]; then
+              echo "::error::tag（$GITHUB_REF_NAME）与 config/app.php 的版本号（$VERSION）不一致，请先执行 bash tools/bump-version.sh $TAG_VERSION"
+              exit 1
+            fi
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "name=blessing-skin-server-$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: 安装 PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, gd, zip, imagick, bcmath, intl, curl, fileinfo, pdo_mysql, xml, dom
+          coverage: none
+          tools: composer:v2
+
+      - name: 安装 PHP 依赖
+        shell: bash
+        env:
+          COMPOSER_ALLOW_SUPERUSER: 1
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          # --no-scripts：package:discover 放到下面单独执行，便于定位问题
+          composer install --no-dev --prefer-dist --optimize-autoloader \
+            --no-interaction --no-progress --no-scripts
+          php artisan package:discover --ansi
+          php artisan key:generate --force --no-interaction
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: 安装前端依赖
+        shell: bash
+        run: yarn install --frozen-lockfile --network-timeout 600000
+
+      - name: 构建前端资源
+        shell: bash
+        run: bash tools/build-assets.sh
+
+      - name: 打包安装包
+        shell: bash
+        run: bash tools/release.sh --no-composer
+
+      - name: 生成校验和
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum ./*.zip | tee ./SHA256SUMS.txt
+
+      - name: 上传 workflow artifact（手动触发时用于下载）
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.ver.outputs.name }}
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
+          retention-days: 30
+
+      - name: 创建 GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Blessing Skin Server ${{ steps.ver.outputs.version }}
+          files: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
+          generate_release_notes: true
+          fail_on_unmatched_files: true

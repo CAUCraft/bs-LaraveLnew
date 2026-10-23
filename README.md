@@ -1,6 +1,12 @@
 - [简体中文](./README-zh.md)
 - **English**
 
+> **About this repository**
+>
+> This is a customized distribution of [Blessing Skin Server](https://github.com/bs-community/blessing-skin-server) `6.0.2`.
+> Current version: **6.0.2-R1**, targeting **BT Panel + Nginx + PHP 8.4 + MySQL 8**.
+> See [RELEASE.md](./RELEASE.md) for local changes, package layout and the release process (Chinese).
+
 <p align="center"><img src="https://media.githubusercontent.com/media/bs-community/logo/main/logo.png"></p>
 
 <p align="center">

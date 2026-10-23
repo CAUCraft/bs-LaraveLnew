@@ -1,6 +1,12 @@
 - **简体中文**
 - [English](./README.md)
 
+> **本仓库说明**
+>
+> 这是 [Blessing Skin Server](https://github.com/bs-community/blessing-skin-server) `6.0.2` 的定制发行版，
+> 当前版本 **6.0.2-R1**，部署环境为 **宝塔面板 + Nginx + PHP 8.4 + MySQL 8**。
+> 相对上游的改动、安装包构成与发版流程，见 [RELEASE.md](./RELEASE.md)。
+
 <p align="center"><img src="https://media.githubusercontent.com/media/bs-community/logo/main/logo.png"></p>
 
 <p align="center">
