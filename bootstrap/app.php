@@ -1,55 +1,74 @@
 <?php
 
+use App\Http\Middleware;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Middleware as MiddlewareConfigurator;
+
 /*
 |--------------------------------------------------------------------------
 | Create The Application
 |--------------------------------------------------------------------------
 |
-| The first thing we will do is create a new Laravel application instance
-| which serves as the "glue" for all the components of Laravel, and is
-| the IoC container for the system binding all of the various parts.
+| Laravel 11+ 风格的引导文件。路由仍由 App\Providers\RouteServiceProvider
+| 统一注册（web / api / static），以保持 Blessing Skin 原有的路由行为。
 |
 */
 
-$app = new Illuminate\Foundation\Application(
-    $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
-);
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        commands: __DIR__.'/../routes/console.php',
+    )
+    ->withExceptions()
+    ->withMiddleware(function (MiddlewareConfigurator $middleware): void {
+        /*
+         * 全局中间件：用 Blessing Skin 的实现替换框架默认的
+         * ConvertEmptyStringsToNull，并在末尾追加语言探测。
+         */
+        $middleware->replace(
+            \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+            Middleware\ConvertEmptyStringsToNull::class
+        );
 
-/*
-|--------------------------------------------------------------------------
-| Bind Important Interfaces
-|--------------------------------------------------------------------------
-|
-| Next, we need to bind some important interfaces into the container so
-| we will be able to resolve them when needed. The kernels serve the
-| incoming requests to this application from both the web and CLI.
-|
-*/
+        $middleware->append(Middleware\DetectLanguagePrefer::class);
 
-$app->singleton(
-    Illuminate\Contracts\Http\Kernel::class,
-    App\Http\Kernel::class
-);
+        /*
+         * 路由中间件组：与升级前的 App\Http\Kernel 保持一致。
+         */
+        $middleware->group('web', [
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
+            Middleware\EnforceEverGreen::class,
+            Middleware\RedirectToSetup::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ]);
 
-$app->singleton(
-    Illuminate\Contracts\Console\Kernel::class,
-    App\Console\Kernel::class
-);
+        $middleware->group('api', [
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ]);
 
-$app->singleton(
-    Illuminate\Contracts\Debug\ExceptionHandler::class,
-    App\Exceptions\Handler::class
-);
+        $middleware->group('authorize', [
+            'auth:web',
+            Middleware\RejectBannedUser::class,
+            Middleware\EnsureEmailFilled::class,
+            Middleware\FireUserAuthenticated::class,
+        ]);
 
-/*
-|--------------------------------------------------------------------------
-| Return The Application
-|--------------------------------------------------------------------------
-|
-| This script returns the application instance. The instance is given to
-| the calling script so we can separate the building of the instances
-| from the actual running of the application and sending responses.
-|
-*/
-
-return $app;
+        /*
+         * 中间件别名。
+         */
+        $middleware->alias([
+            'auth' => Middleware\Authenticate::class,
+            'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
+            'guest' => Middleware\RedirectIfAuthenticated::class,
+            'role' => Middleware\CheckRole::class,
+            'setup' => Middleware\CheckInstallation::class,
+            'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+            'verified' => Middleware\CheckUserVerified::class,
+            'scope' => \Laravel\Passport\Http\Middleware\CheckTokenForAnyScope::class,
+            'scopes' => \Laravel\Passport\Http\Middleware\CheckToken::class,
+        ]);
+    })
+    ->create();

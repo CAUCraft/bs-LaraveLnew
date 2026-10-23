@@ -25,7 +25,9 @@ class RouteServiceProvider extends ServiceProvider
 
         $this->mapWebRoutes($router);
 
-        $this->mapApiRoutes();
+        $this->mapApiRoutes($router);
+
+        $this->mapOAuthRoutes($router);
 
         foreach ($router->getRoutes()->getRoutesByName() as $name => $route) {
             if (Str::startsWith($name, ['passport.authorizations', 'passport.tokens', 'passport.clients'])) {
@@ -53,8 +55,10 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function mapStaticRoutes(Router $router): void
     {
-        Route::namespace($this->namespace)
-            ->group(base_path('routes/static.php'));
+        // Laravel 11+ 移除了 Router::namespace()，改用分组属性传递控制器命名空间。
+        Route::group(['namespace' => $this->namespace], function () {
+            require base_path('routes/static.php');
+        });
     }
 
     /**
@@ -69,5 +73,25 @@ class RouteServiceProvider extends ServiceProvider
             )
             ->namespace($this->namespace)
             ->group(base_path('routes/api.php'));
+    }
+
+    /**
+     * Define the routes for managing OAuth clients (third-party apps).
+     *
+     * Passport 13 默认不再注册旧的 JSON API 路由，且数据结构有变化，
+     * 因此由 App\Http\Controllers\OAuthClientController 提供兼容实现。
+     */
+    protected function mapOAuthRoutes(Router $router): void
+    {
+        Route::group([
+            'prefix' => 'oauth',
+            'namespace' => $this->namespace,
+            'middleware' => ['web', 'auth', 'verified'],
+        ], function () {
+            Route::get('clients', 'OAuthClientController@index');
+            Route::post('clients', 'OAuthClientController@store');
+            Route::put('clients/{client}', 'OAuthClientController@update');
+            Route::delete('clients/{client}', 'OAuthClientController@destroy');
+        });
     }
 }

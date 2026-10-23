@@ -20,7 +20,7 @@ class RedirectToSetup
             config(['translation-loader.translation_loaders' => []]);
         }
 
-        if ($hasLock && !$request->is('setup*') && Comparator::greaterThan($version, option('version', $version))) {
+        if ($hasLock && !$request->is('setup*') && Comparator::greaterThan(normalize_version($version), normalize_version(option('version', $version)))) {
             Artisan::call('update');
         }
 

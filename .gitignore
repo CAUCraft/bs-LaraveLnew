@@ -27,3 +27,13 @@ storage/options.php
 resources/views/overrides
 .DS_Store
 */.DS_Store
+
+# ---- 本项目（Laravel 13 升级分支）附加 ----
+/releasefiles/
+/public/app/
+database/*.sqlite
+storage/debugbar/
+storage/logs/*
+!storage/logs/.gitignore
+.workbuddy/
+MEMORY.md

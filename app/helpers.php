@@ -67,6 +67,30 @@ if (!function_exists('option')) {
     }
 }
 
+if (!function_exists('normalize_version')) {
+    /**
+     * 将版本号规整为 Composer 可解析的语义化版本。
+     *
+     * 本项目版本号形如 `6.0.2-R`，其中 `-R` 是自有标识（Revision），
+     * 并非 Composer 认可的前缀（例如 -rc、-beta），直接交给 Composer
+     * 的版本解析器会抛出 UnexpectedValueException，故比较前先剥离。
+     */
+    function normalize_version(?string $version): string
+    {
+        $version = trim((string) $version);
+
+        if ($version === '') {
+            return '0.0.0';
+        }
+
+        if (preg_match('/^v?(\d+(?:\.\d+){0,3})/i', $version, $matches)) {
+            return $matches[1];
+        }
+
+        return $version;
+    }
+}
+
 if (!function_exists('option_localized')) {
     function option_localized($key = null, $default = null, $raw = false)
     {

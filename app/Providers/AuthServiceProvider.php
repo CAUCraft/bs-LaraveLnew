@@ -18,6 +18,17 @@ class AuthServiceProvider extends ServiceProvider
     protected $policies = [
     ];
 
+    public function register(): void
+    {
+        /*
+         * Passport 13 的 JSON API 路由（/oauth/clients 等）返回的是新结构，
+         * 且默认关闭。Blessing Skin 改为在 RouteServiceProvider 中注册
+         * 兼容旧版数据结构的接口（见 OAuthClientController），
+         * 因此这里保持 Passport 自带的 JSON API 路由关闭。
+         */
+        Passport::$registersJsonApiRoutes = false;
+    }
+
     /**
      * Register any authentication / authorization services.
      */

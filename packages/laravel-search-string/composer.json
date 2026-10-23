@@ -1,0 +1,41 @@
+{
+  "name": "lorisleiva/laravel-search-string",
+  "description": "Generates database queries based on one unique string using a simple and customizable syntax.",
+  "version": "1.4.0",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Loris Leiva",
+      "email": "loris.leiva@gmail.com"
+    }
+  ],
+  "require": {
+    "php": "^8.3",
+    "illuminate/support": "^11.0 || ^12.0 || ^13.0",
+    "hoa/compiler": "^3.17",
+    "sanmai/hoa-protocol": "^1.17"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^7.0|^8.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Lorisleiva\\LaravelSearchString\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Lorisleiva\\LaravelSearchString\\Tests\\": "tests"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Lorisleiva\\LaravelSearchString\\ServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}

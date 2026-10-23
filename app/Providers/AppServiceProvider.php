@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services;
+use Illuminate\Foundation\AliasLoader;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\URL;
@@ -15,6 +16,28 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('cipher', 'App\Services\Cipher\\'.config('secure.cipher'));
         $this->app->singleton(Services\Option::class);
         $this->app->alias(Services\Option::class, 'options');
+
+        // Laravel 11+ 不再使用 App\Http\Kernel 与 config/app.php 中的 aliases，
+        // 自定义异常处理器与门面别名需要在此处显式注册。
+        $this->app->singleton(
+            \Illuminate\Contracts\Debug\ExceptionHandler::class,
+            \App\Exceptions\Handler::class
+        );
+
+        AliasLoader::getInstance()->alias('Option', Services\Facades\Option::class);
+
+        /*
+         * Laravel 13 内置了基于 intervention/image v4 的图片管理器，并注册了
+         * 延迟服务 `image`。本项目与 blessing/texture-renderer 仍依赖
+         * intervention/image v2，故在此显式重新绑定 `image`，
+         * 并预先标记框架的 ImageServiceProvider 已加载，避免其延迟注册覆盖本次绑定。
+         */
+        if (class_exists(\Intervention\Image\ImageManager::class)) {
+            $this->app->register(\Illuminate\Image\ImageServiceProvider::class);
+            $this->app->singleton('image', function ($app) {
+                return new \Intervention\Image\ImageManager(config('image'));
+            });
+        }
     }
 
     public function boot(Request $request): void

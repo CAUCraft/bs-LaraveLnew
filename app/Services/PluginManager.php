@@ -326,7 +326,7 @@ class PluginManager
                 if ($name == 'blessing-skin-server') {
                     $version = config('app.version');
 
-                    return (!Semver::satisfies($version, $constraint))
+                    return (!Semver::satisfies(normalize_version($version), $constraint))
                         ? [$name => compact('version', 'constraint')]
                         : [];
                 } elseif ($name == 'php') {

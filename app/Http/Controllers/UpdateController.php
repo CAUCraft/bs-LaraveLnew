@@ -86,7 +86,7 @@ class UpdateController extends Controller
             ];
         }
 
-        $can = Comparator::greaterThan(Arr::get($info, 'latest'), config('app.version'));
+        $can = Comparator::greaterThan(Arr::get($info, 'latest'), normalize_version(config('app.version')));
 
         return ['can' => $can, 'reason' => ''];
     }

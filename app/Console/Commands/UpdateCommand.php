@@ -17,7 +17,7 @@ class UpdateCommand extends Command
     public function handle(Artisan $artisan, Filesystem $filesystem)
     {
         $this->procedures()->each(function ($procedure, $version) {
-            if (Comparator::lessThan(option('version'), $version)) {
+            if (Comparator::lessThan(normalize_version(option('version')), normalize_version($version))) {
                 $procedure();
             }
         });

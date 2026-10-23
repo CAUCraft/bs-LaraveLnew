@@ -1,0 +1,46 @@
+{
+  "name": "blessing/filter",
+  "description": "Filters API for designing plugin system.",
+  "version": "1.5.0",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Pig Fang",
+      "email": "g-plane@hotmail.com"
+    }
+  ],
+  "keywords": [
+    "filters",
+    "laravel",
+    "wordpress"
+  ],
+  "require": {
+    "illuminate/contracts": "^11.0 || ^12.0 || ^13.0",
+    "illuminate/support": "^11.0 || ^12.0 || ^13.0"
+  },
+  "require-dev": {
+    "illuminate/container": "^6 || ^7 || ^8 || ^9 || ^10 || ^11"
+  },
+  "autoload": {
+    "psr-4": {
+      "Blessing\\": "src/Blessing"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Blessing\\FilterServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "stable"
+}
